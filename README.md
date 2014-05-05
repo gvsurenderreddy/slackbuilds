@@ -1,4 +1,4 @@
 slackbuilds
 ===========
 
-slackbuilds for porteus
+slackbuilds fork
