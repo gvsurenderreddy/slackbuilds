@@ -1,0 +1,13 @@
+VisualBoyAdvance-M is a Nintendo Game Boy Emulator with high compatibility with
+commercial games.
+
+It emulates the Nintendo Game Boy Advance hand held console, in addition to the
+original Game Boy hand held systems and its Super and Color variants.
+
+VBA-M is a continued development of the now inactive VisualBoy Advance project,
+with many improvements from various developments of VBA.
+
+This application is the GTK GUI version of VisualBoyAdvance-M. The name of the
+executable is "gvbam".
+
+FFMPEG=ON will enable recording and playback. It requires FFMPEG.

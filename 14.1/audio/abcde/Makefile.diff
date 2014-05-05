@@ -1,0 +1,11 @@
+--- abcde-2.5.4.orig/Makefile	2012-10-07 13:35:53.429882065 -0400
++++ abcde-2.5.4/Makefile	2012-10-07 13:39:37.271325434 -0400
+@@ -3,7 +3,7 @@
+ # Installation directories
+ prefix = ${DESTDIR}/usr
+ exec_prefix = ${prefix}
+-mandir = ${prefix}/share/man/man1
++mandir = ${prefix}/man/man1
+ bindir = ${exec_prefix}/bin
+ etcdir = ${DESTDIR}/etc
+ 

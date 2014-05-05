@@ -1,0 +1,145 @@
+#!/bin/sh
+
+# Slackware build script for google-go-lang
+
+# Written by Eric Schultz eric at schultzter.ca
+# Taken over by Vincent Batts vbatts@hashbangbash.com
+
+# Copyright (c) 2012, 2013  Vincent Batts
+# Copyright (c) 2012 Eric Schultz
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy of
+# this software and associated documentation files (the "Software"), to deal in
+# the Software without restriction, including without limitation the rights to
+# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+# the Software, and to permit persons to whom the Software is furnished to do so,
+# subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+PRGNAM=google-go-lang
+VERSION=${VERSION:-1.2}
+BUILD=${BUILD:-1}
+TAG=${TAG:-_SBo}
+
+RELEASE=${RELEASE:-linux}
+
+if [ -z "$ARCH" ]; then
+  case "$( uname -m )" in
+    i?86) ARCH=i486 ;;
+    arm*) ARCH=arm ;;
+       *) ARCH=$( uname -m ) ;;
+  esac
+fi
+
+if [ "$ARCH" = "i486" ]; then
+  LIBDIRSUFFIX=""
+  GARCH="386"
+elif [ "$ARCH" = "x86_64" ]; then
+  LIBDIRSUFFIX="64"
+  GARCH="amd64"
+elif [ "$ARCH" = "arm" ]; then
+  LIBDIRSUFFIX=""
+  GARCH="arm"
+  export GOARM="6" # can be '5' as well, to use soft float instead of hardware
+else
+  LIBDIRSUFFIX=""
+  GARCH=386
+fi
+
+CWD=$(pwd)
+TMP=${TMP:-/tmp/SBo}
+PKG=$TMP/package-$PRGNAM
+OUTPUT=${OUTPUT:-/tmp}
+
+set -e
+
+rm -rf $PKG
+mkdir -p $TMP $PKG/usr/lib${LIBDIRSUFFIX} $OUTPUT
+cd $PKG/usr/lib${LIBDIRSUFFIX}
+tar xvf $CWD/go$VERSION.src.tar.gz
+cd go
+chown -R root:root .
+find -L . \
+ \( -perm 777 -o -perm 775 -o -perm 750 -o -perm 711 -o -perm 555 \
+ -o -perm 511 \) -exec chmod 755 {} \; -o \
+ \( -perm 666 -o -perm 664 -o -perm 640 -o -perm 600 -o -perm 444 \
+ -o -perm 440 -o -perm 400 \) -exec chmod 644 {} \;
+
+export GOSRC="$(pwd)"
+export GOROOT="$(pwd)"
+export GOROOT_FINAL="/usr/lib${LIBDIRSUFFIX}/go"
+export GOOS="linux"
+export GOBIN="${PKG}/usr/bin"
+export GOARCH="${GARCH}"
+
+unset BASH_ENV # Not sure why, but this causes run.bash to fail --rworkman
+
+mkdir -p "${GOBIN}"
+cd src
+
+LC_ALL=C \
+./all.bash
+
+cd ..
+
+install -Dm644 misc/bash/go $PKG/etc/bash_completion.d/go
+
+install -Dm644 misc/emacs/go-mode-load.el $PKG/usr/share/emacs/site-lisp/go-mode-load.el
+install -Dm644 misc/emacs/go-mode.el $PKG/usr/share/emacs/site-lisp/go-mode.el
+
+install -Dm644 misc/vim/syntax/go.vim $PKG/usr/share/vim/vimfiles/syntax/go.vim
+install -Dm644 misc/vim/ftdetect/gofiletype.vim $PKG/usr/share/vim/vimfiles/ftdetect/gofiletype.vim
+install -Dm644 misc/vim/ftplugin/go/fmt.vim $PKG/usr/share/vim/vimfiles/ftplugin/go/fmt.vim
+install -Dm644 misc/vim/ftplugin/go/import.vim $PKG/usr/share/vim/vimfiles/ftplugin/go/import.vim
+install -Dm644 misc/vim/indent/go.vim $PKG/usr/share/vim/vimfiles/indent/go.vim
+
+ln -sf /usr/lib${LIBDIRSUFFIX}/go/pkg/tool/linux_${GOARCH}/cgo $PKG/usr/bin/cgo
+ln -sf /usr/lib${LIBDIRSUFFIX}/go/pkg/tool/linux_${GOARCH}/ebnflint $PKG/usr/bin/ebnflint
+
+# we'll just check for all of their compilers :-)
+for tool in 8a 8c 8g 8l 6a 6c 6g 6l 5a 5c 5g 5l ; do
+  if [ -x $PKG/usr/lib${LIBDIRSUFFIX}/go/pkg/tool/linux_${GOARCH}/${tool} ] ; then
+    ln -sf /usr/lib${LIBDIRSUFFIX}/go/pkg/tool/linux_${GOARCH}/${tool} $PKG/usr/bin/${tool}
+  fi
+done
+
+# Put the profile scripts for setting PATH and env variables
+mkdir -p $PKG/etc/profile.d
+cat > $PKG/etc/profile.d/go.csh.new << EOF
+#!/bin/csh
+setenv GOOS linux
+setenv GOARCH ${GOARCH}
+setenv GOROOT /usr/lib${LIBDIRSUFFIX}/go
+EOF
+cat > $PKG/etc/profile.d/go.sh.new << EOF
+#!/bin/sh
+export GOOS="linux"
+export GOARCH="${GOARCH}"
+export GOROOT="/usr/lib${LIBDIRSUFFIX}/go"
+EOF
+
+chmod 0755 $PKG/etc/profile.d/go.csh.new
+chmod 0755 $PKG/etc/profile.d/go.sh.new
+
+mkdir -p $PKG/usr/doc/$PRGNAM-$VERSION
+cp -a \
+  AUTHORS CONTRIBUTORS LICENSE PATENTS README VERSION \
+  $PKG/usr/doc/$PRGNAM-$VERSION
+cat $CWD/$PRGNAM.SlackBuild > $PKG/usr/doc/$PRGNAM-$VERSION/$PRGNAM.SlackBuild
+
+mkdir -p $PKG/install
+cat $CWD/slack-desc > $PKG/install/slack-desc
+cat $CWD/doinst.sh > $PKG/install/doinst.sh
+
+cd $PKG
+/sbin/makepkg -l y -c n $OUTPUT/$PRGNAM-$VERSION-$ARCH-$BUILD$TAG.${PKGTYPE:-tgz}

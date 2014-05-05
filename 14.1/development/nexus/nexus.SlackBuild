@@ -1,0 +1,131 @@
+#!/bin/sh
+
+# Slackware build script for Sonatype Nexus
+
+# Copyright 2013  Giorgio Peron Campodarsego, PD, Italy giorgio.peron@gmail.com
+# All rights reserved.
+#
+# Redistribution and use of this script, with or without modification, is
+# permitted provided that the following conditions are met:
+#
+# 1. Redistributions of this script must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ''AS IS'' AND ANY EXPRESS OR IMPLIED
+#  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+#  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+#  EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+#  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+#  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+#  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+#  WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+#  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+#  ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+PRGNAM=nexus
+VERSION=${VERSION:-2.5.0_04}
+BUILD=${BUILD:-1}
+TAG=${TAG:-_SBo}
+
+SRCVERSION=$(echo $VERSION | tr _ -)
+
+if [ -z "$ARCH" ]; then
+  case "$( uname -m )" in
+    i?86) ARCH=i486 ;;
+    arm*) ARCH=arm ;;
+       *) ARCH=$( uname -m ) ;;
+  esac
+fi
+
+CWD=$(pwd)
+TMP=${TMP:-/tmp/SBo}
+PKG=$TMP/package-$PRGNAM
+OUTPUT=${OUTPUT:-/tmp}
+
+if [ "$ARCH" = "i486" ]; then
+  NEXUS_ARCH="linux-x86-32"
+  LIBDIRSUFFIX=""
+elif [ "$ARCH" = "i686" ]; then
+  NEXUS_ARCH="linux-x86-32"
+  LIBDIRSUFFIX=""
+elif [ "$ARCH" = "x86_64" ]; then
+  NEXUS_ARCH="linux-x86-64"
+  LIBDIRSUFFIX="64"
+else
+  echo "ARCH $ARCH not supported"
+  exit 1
+fi
+
+set -e
+
+# Check if the 'nexus' user & group exist:
+if [ "$(grep ^nexus /etc/passwd)" = "" -o "$(grep ^nexus /etc/group)" = "" ] ; then
+  printf "\nYou must have a nexus user and group.\n\nExample:\n"
+  printf "\t# groupadd -g 252 nexus\n"
+  printf "\t# useradd -u 252 -d /dev/null -s /bin/sh -g nexus nexus\n\n"
+  exit 1
+fi
+
+rm -rf $PKG
+mkdir -p $TMP $PKG $OUTPUT
+cd $TMP
+rm -rf $PRGNAM-$SRCVERSION
+tar xvf $CWD/$PRGNAM-$SRCVERSION-bundle.tar.gz
+cd $PRGNAM-$SRCVERSION
+chown -R root:root .
+find -L . \
+ \( -perm 777 -o -perm 775 -o -perm 750 -o -perm 711 -o -perm 555 -o -perm 511 \) \
+ -exec chmod 755 {} \; -o \
+ \( -perm 666 -o -perm 664 -o -perm 600 -o -perm 444 -o -perm 440 -o -perm 400 \) \
+ -exec chmod 644 {} \;
+
+mkdir -p $PKG/usr/share/$PRGNAM/bin/jsw/lib
+mv lib $PKG/usr/share/$PRGNAM
+mv $PRGNAM $PKG/usr/share/$PRGNAM/
+mv bin/jsw/license $PKG/usr/share/$PRGNAM/bin/jsw
+mv bin/jsw/lib/*.jar $PKG/usr/share/$PRGNAM/bin/jsw/lib
+mv bin/jsw/lib/libwrapper-$NEXUS_ARCH.so $PKG/usr/share/$PRGNAM/bin/jsw/lib
+mv bin/jsw/$NEXUS_ARCH $PKG/usr/share/$PRGNAM/bin/jsw
+
+mkdir -p $PKG/etc/$PRGNAM
+mv conf/* $PKG/etc/$PRGNAM
+mv bin/jsw/conf/* $PKG/etc/$PRGNAM
+
+mkdir -p $PKG/var/{lib,log,run,tmp}/$PRGNAM
+ln -sf /etc/$PRGNAM $PKG/usr/share/$PRGNAM/conf
+ln -sf /etc/$PRGNAM $PKG/usr/share/$PRGNAM/bin/jsw/conf
+ln -sf /var/tmp/$PRGNAM $PKG/usr/share/$PRGNAM/tmp
+ln -sf /var/log/$PRGNAM $PKG/usr/share/$PRGNAM/logs
+
+mkdir -p $PKG/etc/rc.d
+mv bin/$PRGNAM $PKG/etc/rc.d/rc.$PRGNAM.new
+
+# Fix configuration files
+sed -i $PKG/etc/rc.d/rc.$PRGNAM.new \
+    -e "s:NEXUS_HOME=\"..\":NEXUS_HOME=\"/usr/share/$PRGNAM\":g" \
+    -e "s:#RUN_AS_USER=:RUN_AS_USER=nexus:g" \
+    -e "s:#PIDDIR=\".\":PIDDIR=\"/var/run/$PRGNAM\":g" \
+    -e "s:DIST_ARCH=\`uname -p:DIST_ARCH=\`uname -m:g"
+sed -i \
+  "s:nexus-work=\${bundleBasedir}/../sonatype-work/nexus:nexus-work=/var/lib/$PRGNAM:g" \
+  $PKG/etc/$PRGNAM/$PRGNAM.properties
+sed -i $PKG/etc/$PRGNAM/wrapper.conf \
+    -e "s:wrapper.working.dir=../../..:wrapper.working.dir=/usr/share/$PRGNAM:g" \
+    -e "s:wrapper.java.command=java:wrapper.java.command=/usr/lib$LIBDIRSUFFIX/java/bin/java:g"
+
+mv $PKG/etc/$PRGNAM/$PRGNAM.properties{,.new}
+mv $PKG/etc/$PRGNAM/wrapper.conf{,.new}
+
+# Fix ownership of some dirs
+chown -R nexus:nexus $PKG/var/{lib,log,run,tmp}/$PRGNAM
+
+mkdir -p $PKG/usr/doc/$PRGNAM-$VERSION
+mv *.txt $PKG/usr/doc/$PRGNAM-$VERSION
+cat $CWD/$PRGNAM.SlackBuild > $PKG/usr/doc/$PRGNAM-$VERSION/$PRGNAM.SlackBuild
+
+mkdir -p $PKG/install
+cat $CWD/slack-desc > $PKG/install/slack-desc
+cat $CWD/doinst.sh > $PKG/install/doinst.sh
+
+cd $PKG
+/sbin/makepkg -l y -c n $OUTPUT/$PRGNAM-$VERSION-$ARCH-$BUILD$TAG.${PKGTYPE:-tgz}

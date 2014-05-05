@@ -1,0 +1,65 @@
+--- vboxadd.sh.orig	2012-03-13 15:52:25.000000000 +0100
++++ vboxadd.sh	2012-09-18 22:09:48.886085813 +0200
+@@ -480,60 +480,13 @@
+ # setup_script
+ setup()
+ {
+-    if test -r $config; then
+-      . $config
+-    else
+-      fail "Configuration file $config not found"
+-    fi
+-    test -n "$INSTALL_DIR" -a -n "$INSTALL_VER" ||
+-      fail "Configuration file $config not complete"
+-    export BUILD_TYPE
+-    export USERNAME
+-
+-    MODULE_SRC="$INSTALL_DIR/src/vboxguest-$INSTALL_VER"
+-    BUILDINTMP="$MODULE_SRC/build_in_tmp"
+-    DODKMS="$MODULE_SRC/do_dkms"
+-    chcon -t bin_t "$BUILDINTMP" > /dev/null 2>&1
+-    chcon -t bin_t "$DODKMS"     > /dev/null 2>&1
+-
+-    setup_modules
+-    mod_succ="$?"
+-    extra_setup
+-    if [ "$mod_succ" -eq "0" ]; then
+-        if running_vboxguest || running_vboxadd; then
+-            printf "You should restart your guest to make sure the new modules are actually used\n\n"
+-        else
+-            start
+-        fi
+-    fi
++    echo "Not implemented! Please use the virtualbox-kernel-addons.SlackBuild available at SlackBuilds.org instead."
+ }
+ 
+ # cleanup_script
+ cleanup()
+ {
+-    if test -r $config; then
+-      . $config
+-      test -n "$INSTALL_DIR" -a -n "$INSTALL_VER" ||
+-        fail "Configuration file $config not complete"
+-      DODKMS="$INSTALL_DIR/src/vboxguest-$INSTALL_VER/do_dkms"
+-    elif test -x ./do_dkms; then  # Executing as part of the installer...
+-      DODKMS=./do_dkms
+-    else
+-      fail "Configuration file $config not found"
+-    fi
+-
+-    # Delete old versions of VBox modules.
+-    cleanup_modules
+-    depmod
+-
+-    # Remove old module sources
+-    for i in $OLDMODULES; do
+-      rm -rf /usr/src/$i-*
+-    done
+-
+-    # Remove other files
+-    rm /sbin/mount.vboxsf 2>/dev/null
+-    rm /etc/udev/rules.d/60-vboxadd.rules 2>/dev/null
++    echo "Not implemented! Please use removepkg or pkgtool to remove virtualbox-addons and/or virtualbox-kernel-addons instead."
+ }
+ 
+ dmnstatus()

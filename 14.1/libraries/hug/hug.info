@@ -1,0 +1,12 @@
+PRGNAM="hug"
+VERSION="0.80"
+HOMEPAGE="http://basic-converter.org"
+DOWNLOAD="http://ponce.cc/slackware/sources/repo/bacon/hug.bac \
+          http://ponce.cc/slackware/sources/repo/bacon/hug_imports.bac"
+MD5SUM="c2feb00c90dda8e63e1a0a668afc24bc \
+        59af9df417688dd1cb95e5f31744dae7"
+DOWNLOAD_x86_64=""
+MD5SUM_x86_64=""
+REQUIRES="bacon"
+MAINTAINER="Steve Pledger"
+EMAIL="spledger91@yahoo.com"

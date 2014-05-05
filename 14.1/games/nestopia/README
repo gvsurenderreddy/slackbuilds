@@ -1,0 +1,10 @@
+Nestopia is a portable Nintendo Entertainment System emulator. It strives for
+the most accurate emulation possible at the pixel-by-pixel and sample-by-sample
+level. It was also one of the inspirations for bsnes.
+
+A 1Ghz CPU and 128MB RAM are required to get the best performance.
+
+A Disk System BIOS (disksys.rom) is optional and, of course, not included. If
+you have one, put it in ~/.nestopia
+
+Note: parallel building is supported with a max of 2 jobs.
